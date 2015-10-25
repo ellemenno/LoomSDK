@@ -1,0 +1,121 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+require 'ostruct'
+
+require File.expand_path('../../lib/api.rb', __FILE__)
+
+
+def version
+  "lsdoc v#{LoomDocs::VERSION}"
+end
+
+def usage
+  puts @parser
+end
+
+def examples
+  puts ''
+  puts 'examples'
+  puts ''
+  puts '    generate docs for the classes in ./libs/*.loomlib, storing the output in ./docs:'
+  puts '    $ lsdoc -o docs -l libs'
+  puts ''
+  puts '    generate docs into ./docs, for the classes in ./libs/*.loomlib that match *MyClass*:'
+  puts '    $ lsdoc -o docs -l libs --lib-filter MyClass'
+end
+
+def fail(msg)
+  abort(msg)
+end
+
+
+@options = OpenStruct.new(
+  :loomlibs => [],
+  :lib_includes => [],
+  :examples_dir => nil,
+  :example_includes => [],
+  :guides_dir => nil,
+  :guide_includes => [],
+  :output_dir => './output',
+)
+
+@parser = OptionParser.new do |o|
+  o.banner =    "usage: lsdoc [--version] [-h|--help]"
+  o.banner << "\n             [-o|--output]"
+  o.banner << "\n             [-l|--libs] [--lib-filter]"
+  o.banner << "\n             [-e|--examples] [--example-filter]"
+  o.banner << "\n             [-g|--guides] [--guide-filter]"
+
+  o.separator ''
+
+  o.on('-o', '--output <dir>', 'Create all output in given dir. Defaults to ./output') do |dir|
+    @options.output_dir = dir
+  end
+
+  o.on('-l', '--libs <dir>', 'Generate docs for all classes in all loomlibs in given dir. Can use more than once') do |dir|
+    fail("Loomlibs directory '#{dir}' does not exist") unless File.exist?(dir)
+    @options.loomlibs.concat(dir.glob('*.loomlib'))
+  end
+
+  o.on('--lib-filter <glob>', 'Ignore classes that do not match the provided glob. Can use more than once') do |glob|
+    @options.lib_includes << glob
+  end
+
+  o.on('-e', '--examples <dir>', 'Generate examples for files in the given dir') do |dir|
+    fail("Examples directory '#{dir}' does not exist") unless File.exist?(dir)
+    @options.examples_dir = dir
+  end
+
+  o.on('--example-filter <glob>', 'Ignore examples that do not match the provided glob. Can use more than once') do |glob|
+    @options.example_includes << glob
+  end
+
+  o.on('-g', '--guides <dir>', 'Generate guides from files in the given dir') do |dir|
+    fail("Guides directory '#{dir}' does not exist") unless File.exist?(dir)
+    @options.guides_dir = dir
+  end
+
+  o.on('--guide-filter <glob>', 'Ignore guides that do not match the provided glob. Can use more than once') do |glob|
+    @options.guide_includes << glob
+  end
+
+  o.on_tail('-h', 'Quick help. Print synopsis and list the supported options') do
+    usage
+    exit 0
+  end
+
+  o.on_tail('--help', 'Full help. Print synopsis, list the supported options, and show examples') do
+    usage
+    examples
+    exit 0
+  end
+
+  o.on_tail('-v', '--version', 'Show the version number of this tool') do
+    puts version
+    exit 0
+  end
+end
+
+ARGV << '--help' if ARGV.empty?
+
+@parser.parse!
+
+generate
+
+# TODO:
+# leave main.rb as a script to call lsdoc with the appropriate info to build the LoomSDK docs
+# extract all the library code into lib as an api file
+# lsdoc api
+#   generate_examples(examples_dir='./examples', filter='*')
+#   generate_guides(guides_dir='./guides', filter='*')
+#   generate_classdocs(loomlibs, filter='*', output_dir='./output')
+
+=begin
+doc = LoomDocs.new
+doc.generate_examples(options.examples_dir, options.example_includes) if options.examples_dir
+doc.generate_guides(options.guides_dir, options.guide_includes) if options.guides_dir
+doc.generate_classdocs(options.loomlibs, options.lib_includes, options.output_dir)
+=end
+
+exit 0

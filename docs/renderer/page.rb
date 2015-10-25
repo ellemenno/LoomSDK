@@ -12,6 +12,7 @@ class DocumentationPage
         self.instance_variable_set("@#{key}".to_sym, value)
       end
     end
+    binding.pry
     template = ERB.new(@@templates[path])
     result = template.result(binding)
   end

@@ -1,14 +1,17 @@
 class Module::ExampleDoc
-  
+
   attr_accessor :path, :name, :data
-  
-  def initialize(path)
+
+  def initialize(path, output_dir_root, examples_output_dir)
+    @output_dir_root = output_dir_root
+    @examples_output_dir = examples_output_dir
+
     self.path = path
     self.name = path
     self.data = Hash.new
     parse_metadata
   end
-  
+
   def parse_metadata
     return unless File.exists?(File.join("examples", path, "README.md"))
     contents = File.open(File.join("examples", path, "README.md"), "r")
@@ -21,21 +24,21 @@ class Module::ExampleDoc
       end
     end
   end
-  
+
   def write
-    base_path = Pathname.new( OUTPUT_DIR )
-    example_dir = File.join(EXAMPLES_OUTPUT_DIR, name)
-    
+    base_path = Pathname.new( @output_dir_root )
+    example_dir = File.join(@examples_output_dir, name)
+
     relative_to_base = base_path.relative_path_from( Pathname.new(example_dir) )
     example_page = ExamplePage.new(example_dir, self, relative_to_base)
-    
+
     File.open(File.join(example_dir, "index.html"), 'w') do |f|
       f.write(example_page.render File.expand_path("templates/example/example_page"))
     end
   end
-  
+
   def to_s
     data[:name]
   end
-  
+
 end

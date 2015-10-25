@@ -1,14 +1,17 @@
 class Module::PackageDoc
-  
+
   attr_accessor :path, :sub_packages, :classes, :interfaces, :enums, :structs, :delegates
-  
+
   TYPE_INTERFACE = "INTERFACE"
   TYPE_STRUCT = "STRUCT"
   TYPE_DELEGATE = "DELEGATE"
   TYPE_ENUM = "ENUM"
   TYPE_CLASS = "CLASS"
-  
-  def initialize(path)
+
+  def initialize(path, output_dir_root, api_output_dir)
+    @output_dir_root = output_dir_root
+    @api_output_dir = api_output_dir
+
     self.path = path
     self.sub_packages = {}
     self.classes = []
@@ -17,7 +20,7 @@ class Module::PackageDoc
     self.structs = []
     self.delegates = []
   end
-  
+
   def assign_doc(class_doc)
     case class_doc.data[:type]
     when TYPE_INTERFACE
@@ -32,21 +35,21 @@ class Module::PackageDoc
       classes << class_doc
     end
   end
-  
+
   def all_class_docs
     classes.concat interfaces.concat(enums.concat(structs.concat(delegates)))
   end
-  
+
   def url(relative_base)
     relative_base == "" ? "api/#{path}/index.html" : "#{relative_base}/api/#{File.join(path.split("."))}/index.html"
   end
-  
+
 
   def write
-    package_dir = File.join( API_OUTPUT_DIR, path.split(".") )
+    package_dir = File.join( @api_output_dir, path.split(".") )
     FileUtils.mkdir_p package_dir
 
-    base_path = Pathname.new( OUTPUT_DIR )
+    base_path = Pathname.new( @output_dir_root )
     relative_to_base = base_path.relative_path_from( Pathname.new(package_dir) )
 
     page = PackagePage.new(path, self, relative_to_base)
